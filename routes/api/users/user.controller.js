@@ -1,109 +1,130 @@
 'use strict';
 
-var User = require('./user.model');
+const User = require('./user.model');
 
-var _ = require('lodash');
-var passport = require('passport');
-var Project = require('../../../config/default.project');
-var config = require('../../../config/environment');
-var jwt = require('jsonwebtoken');
-var Q = require('q');
-var mongoose = require('mongoose');
-var mail = require('../../../config/mail/mailsender');
-var Log = require('log'), log = new Log('info');
-var Utils = require('../../../config/utils');
-var Product = require('../product/product.model');
+const _ = require('lodash');
+const passport = require('passport');
+const Project = require('../../../config/default.project');
+const config = require('../../../config/environment');
+const jwt = require('jsonwebtoken');
+const Q = require('q');
+const mongoose = require('mongoose');
+const mail = require('../../../config/mail/mailsender');
+const Log = require('log'), log = new Log('info');
+const Utils = require('../../../config/utils');
 
-var async = require('async');
-var dateFormat = require('dateformat'),
+const async = require('async');
+const dateFormat = require('dateformat'),
   date = new Date();
 
 /**
  * Get list of users
  */
-exports.list = function (req, res) {
-  var q = isJson(req.query.where);
-  var sort = {};
-  var limit = parseInt(req.query.limit);
-  var skip = parseInt(req.query.offset);
-
-  if (req.query.sort_name && req.query.sort_order)
-    sort[req.query.sort_name] = req.query.sort_order;
-  else
-    sort = {modDate: 'desc'};
-
-  if (q.name)
-    _.extend(q, {name: new RegExp(q.name, 'i')});
-
-  var ProductLookup = {from: "products", localField: "_id", foreignField: "uid", as: "Products"};
-  var projects = {
-    name: 1
-    , company: 1
-    , email: 1
-    , intro: 1
-    , photo: 1
-    , role: 1
-    , phone: 1
-    , alarm: 1
-    , change_biz: 1
-    , regDate: 1
-    , modDate: 1
-    , mypageDate: 1
-    , status: 1
-    , facebook: 1
-    , twitter: 1
-    , google: 1
-    , products: {
-      "$filter": {
-        "input": "$Products",
-        "as": "child",
-        "cond": {"$eq": ["$$child.status.val", '201']}
-      }
-    }
-  };
-
-  async.waterfall([
-    function getItems(cb) {
-      User.aggregate(
-        {$match: q},
-        {$skip: skip},
-        {$limit: limit},
-        {$lookup: ProductLookup},
-        {$project: projects}
-      ).sort(sort).exec(function (err, users) {
-        if (err) return cb(err);
-        else cb(null, users);
-      })
-    }, function getCount(users, cb) {
-      User.count(q).exec(function (err, count) {
-        if (err) return cb(err);
-        else cb(null, {rows: users, count: count});
-      });
-    }
-  ], function (err, data) {
-    if (err) return Utils.handleError(res, err);
-    return res.status(200).json({data: data});
-  });
-};
+// exports.list = function (req, res) {
+//   var q = isJson(req.query.where);
+//   var sort = {};
+//   var limit = parseInt(req.query.limit);
+//   var skip = parseInt(req.query.offset);
+//
+//   if (req.query.sort_name && req.query.sort_order)
+//     sort[req.query.sort_name] = req.query.sort_order;
+//   else
+//     sort = {modDate: 'desc'};
+//
+//   if (q.name)
+//     _.extend(q, {name: new RegExp(q.name, 'i')});
+//
+//   var ProductLookup = {from: "products", localField: "_id", foreignField: "uid", as: "Products"};
+//   var projects = {
+//     name: 1
+//     , company: 1
+//     , email: 1
+//     , intro: 1
+//     , photo: 1
+//     , role: 1
+//     , phone: 1
+//     , alarm: 1
+//     , change_biz: 1
+//     , regDate: 1
+//     , modDate: 1
+//     , mypageDate: 1
+//     , status: 1
+//     , facebook: 1
+//     , twitter: 1
+//     , google: 1
+//     , products: {
+//       "$filter": {
+//         "input": "$Products",
+//         "as": "child",
+//         "cond": {"$eq": ["$$child.status.val", '201']}
+//       }
+//     }
+//   };
+//
+//   async.waterfall([
+//     function getItems(cb) {
+//       User.aggregate(
+//         {$match: q},
+//         {$skip: skip},
+//         {$limit: limit},
+//         {$lookup: ProductLookup},
+//         {$project: projects}
+//       ).sort(sort).exec(function (err, users) {
+//         if (err) return cb(err);
+//         else cb(null, users);
+//       })
+//     }, function getCount(users, cb) {
+//       User.count(q).exec(function (err, count) {
+//         if (err) return cb(err);
+//         else cb(null, {rows: users, count: count});
+//       });
+//     }
+//   ], function (err, data) {
+//     if (err) return Utils.handleError(res, err);
+//     return res.status(200).json({data: data});
+//   });
+// };
 
 /**
  * Creates a new users
  */
 exports.create = function (req, res, next) {
-  var newUser = new User(req.body);
-  newUser.provider = 'local';
-  if (newUser.role === 'user') {
-    newUser.status = {name: 'user create', val: 201};
-  } else {
-    newUser.status = {name: 'user create', val: 301};
+
+  try {
+    const newUser = new User(req.body);
+    newUser.provider = 'local';
+    if (newUser.role === 'user') {
+      newUser.status = {name: 'user create', val: 201};
+    } else {
+      newUser.status = {name: 'user create', val: 301};
+    }
+    newUser.save()
+      .then((user) => {
+        const token = jwt.sign({_id: user._id}, config.secrets.session, {expiresIn: config.secrets.session.tokenTime});
+        res.json({ data: { token: token }});
+      })
+      .catch((err) => {
+        _.extend(err, { code: err?.code || 1000, msg: err?.errors?.email?.reason})
+        return validationError(res, err);
+      })
+  } catch (err) {
+    console.log(err);
   }
-  newUser.save(function (err, user) {
+};
 
-    if (!!err) return validationError(res, err);
-
-    var token = jwt.sign({_id: user._id}, config.secrets.session, {expiresIn: '1h'});
-    res.json({data: {token: token}});
-  });
+exports.list = function (req, res, next) {
+  try {
+    User.find({})
+      .then((user) => {
+        // res.json({ data: user});
+        res.send({ data: user});
+      })
+      .catch((err) => {
+        return validationError(res, err);
+      })
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 /**
@@ -845,11 +866,11 @@ exports.authCallback = function (req, res, next) {
 };
 
 
-var validationError = function (res, err) {
-  if (err.errors && err.errors.email) {
-    _.extend(err, {code: -422});
+const validationError = function (res, err) {
+  if (!err.code) {
+    _.extend(err, { code: 99 });
   }
-  return res.status(422).json({err: err});
+  return res.status(400).json({err: err});
 };
 
 function handleError(res, err) {

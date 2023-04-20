@@ -1,13 +1,13 @@
 'use strict';
 
-var mongoose = require('mongoose');
-var passport = require('passport');
-var config = require('../../config/environment');
-var jwt = require('jsonwebtoken');
-var expressJwt = require('express-jwt');
-var compose = require('composable-middleware');
-var User = require('../api/users/user.model');
-var validateJwt = expressJwt({ secret: config.secrets.session });
+const mongoose = require('mongoose');
+const passport = require('passport');
+const config = require('../../config/environment');
+const jwt = require('jsonwebtoken');
+const expressJwt = require('express-jwt');
+const compose = require('composable-middleware');
+const User = require('../api/users/user.model');
+const validateJwt = expressJwt({ secret: config.secrets.session });
 
 /**
  * Attaches the user object to the request if authenticated
@@ -39,7 +39,7 @@ function isAuthenticated() {
       });
     }).use(function (err, req, res, next) {
       if (err.name === 'UnauthorizedError') {
-        var e = [];
+        const e = [];
         e.push(err);
         return res.status(401).send({err : {code : -7, message : 'UnauthorizedError'}});
       }
@@ -70,7 +70,7 @@ function isAuthenticated() {
 //             });
 //         }).use(function (err, req, res, next) {
 //             if (err.name === 'UnauthorizedError') {
-//                 var e = [];
+//                 const e = [];
 //                 e.push(err);
 //                 return res.status(401).send(e);
 //             }
@@ -99,7 +99,7 @@ function hasRole(roleRequired) {
  * Returns a jwt token signed by the app secret
  */
 function signToken(id) {
-  return jwt.sign({ _id: id }, config.secrets.session, { expiresIn: '1h' });
+  return jwt.sign({ _id: id }, config.secrets.session, { expiresIn: config.secrets.session.tokenTime });
 }
 
 function longToken(id) {
@@ -111,7 +111,7 @@ function longToken(id) {
  */
 function setTokenCookie(req, res) {
   if (!req.user) return res.status(404).json({ message: 'Something went wrong, please try again.'});
-  var token = signToken(req.user._id, req.user.role);
+  const token = signToken(req.user._id, req.user.role);
   res.cookie('token', JSON.stringify(token));
   res.redirect('/');
 }

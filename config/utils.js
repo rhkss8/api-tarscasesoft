@@ -1,9 +1,14 @@
-var fs = require('fs'),
-    dateFormat = require('dateformat'),
-    date = new Date(),
-    today = dateFormat(date, "yyyymmdd");
-var mv = require('mv');
-var iconv  = require('iconv-lite');
+const fs = require('fs')
+// import dateFormat from "dateformat";
+//     // dateFormat = require('dateformat'),
+//     date = new Date(),
+//     today = dateFormat(date, "yyyymmdd");
+
+const dateFormat = require('dateformat'),
+  date = new Date(),
+  today = dateFormat(date, "yyyymmdd");
+const mv = require('mv');
+// const iconv  = require('iconv-lite');
 
 function handleError(res, err) {
     console.error('handleError....');
@@ -22,7 +27,7 @@ function isJson(str) {
 }
 function getNextSequenceValue(DB,sequenceName){
 
-    var sequenceDocument = DB.findAndModify({
+    const sequenceDocument = DB.findAndModify({
         query:{_id: sequenceName },
         update: {$inc:{sequence_value:1}},
         new:true
@@ -32,9 +37,9 @@ function getNextSequenceValue(DB,sequenceName){
 }
 
 function getProductFilePath(req, type, product_id){
-    var obj = {};
-    var allowedOrigins = ['http://localhost:9020', 'http://localhost:9030'];
-    var origin = req.headers.origin;
+    const obj = {};
+    const allowedOrigins = ['http://localhost:9020', 'http://localhost:9030'];
+    const origin = req.headers.origin;
     if(allowedOrigins.indexOf(origin) > -1){
         //if local
         obj.uidPath = 'nasdb/images/' + type + '/';
@@ -62,14 +67,14 @@ function getProductFilePath(req, type, product_id){
 }
 
 function getFilePath(req, type){
-    var obj = {};
-    var _body = isJson(req.body.data);
-    var _uid = _body.uid.replace(/[~!@\#$%<>^&*\()\-=+_\’"]/gi,'');
+    const obj = {};
+    const _body = isJson(req.body.data);
+    const _uid = _body.uid.replace(/[~!@\#$%<>^&*\()\-=+_\’"]/gi,'');
 
-    var origin = req.get('origin');
+    // const origin = req.get('origin');
 
-    var allowedOrigins = ['http://localhost:9000', 'http://localhost:9010'];
-    var origin = req.headers.origin;
+    const allowedOrigins = ['http://localhost:9000', 'http://localhost:9010'];
+    const origin = req.headers.origin;
     if(allowedOrigins.indexOf(origin) > -1){
         //if local
         obj.uidPath = 'nasdb/images/' + type + '/';
@@ -102,7 +107,7 @@ function fileRename(newName , oldName, callback){
 function fileNameConv(name) {
   name = name.replace(/ /gi, "");
   // iconv.extendNodeEncodings();
-  // var strContents = new Buffer(name);
+  // const strContents = new Buffer(name);
   return name;
 }
 

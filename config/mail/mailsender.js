@@ -1,10 +1,10 @@
 /**
- * Created by rhkss8 on 2016. 11. 4..
+ * Created by tarscase-soft on 2016. 11. 4..
  */
-var nodeMailer = require('nodemailer');
-var smtpTransport = require("nodemailer-smtp-transport");
+const nodeMailer = require('nodemailer');
+const _smtpTransport = require("nodemailer-smtp-transport");
 
-var smtpTransport = nodeMailer.createTransport(smtpTransport({
+const smtpTransport = nodeMailer.createTransport(_smtpTransport({
   host: 'smtp.worksmobile.com',
   secureConnection: true,
   port: 465,
@@ -17,7 +17,7 @@ var smtpTransport = nodeMailer.createTransport(smtpTransport({
 
 exports.sendMailToHtml = function (url, mail, parent, callback) {
 
-  var mailOptions = {
+  const mailOptions = {
     from: '영차 <service@yeoungcha.com>',
     to: mail,
     subject: parent.title + '글에 답변이 등록되었습니다.',
@@ -53,7 +53,7 @@ exports.rePasswordToMail = function (mail, user, repass, callback) {
   if (!callback) callback = function () {
   };
 
-  var mailOptions = {
+  const mailOptions = {
     from: '영차 <service@yeoungcha.com>',
     to: mail,
     subject: '영차 임시 비빌번호가 발급되었습니다.',

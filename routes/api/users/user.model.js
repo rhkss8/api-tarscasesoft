@@ -1,76 +1,27 @@
 'use strict';
 
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-var crypto = require('crypto');
-var authTypes = ['twitter', 'facebook', 'google'];
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+const crypto = require('crypto');
+const authTypes = ['twitter', 'facebook', 'google'];
 
-var UserSchema = new Schema({
+const UserSchema = new Schema({
   role: {
       type: String,
       default: 'user'
   },
   provider: String,
   salt: String,
-
+  id: String,
   email: { type: String, lowercase: true },
   hashedPassword: String,
-
   name: String,
   phone: String,
-  site: {type: String, default: 'Y'},
   gender:String,
   age : Number,
   city : String,
-  birth: Object({
-    year : String,
-    month: String,
-    day: String
-  }),
-  photo: Object({
-    name : String,
-    url: String,
-    thumb_url: String
-  }),
-  company : Object({
-     shop_name : String,//상사명
-     biz_name : String,//사업자명
-     biz_num : String,//사업자번호
-     biz_phone : String,//상사전화번호
-     biz_city : String,//매매단지(지역)
-     biz_shop : String,//매매단지
-     biz_address : String,
-     biz_address_detail : String,
-     biz_desc : String,
-     homepage:String,
-     dealer_num : String,
-     joined_from : String,//가입경로 0 : 지인, 1: 인터넥
-     photo: Object({
-        name : String,
-        url: String,
-        thumb_url: String
-      })
-  }),
-  add: Object({
-    count : {type: Number, default: 0},
-    expire_dt : Date
-  }),
-  alarm : Object({//이벤트 동의
-      email : Boolean,
-      sms : Boolean,
-      push : Boolean
-  }),
-  change_biz : Object({//상사정보 변경요청시
-      text : String,
-      date : Date
-  }),
-  review : Object({
-    count : {type: Number, default: 0},
-    grade : {type: Number, default: 0}
-  }),
   regDate: {type: Date, default: Date.now},
   modDate: {type: Date, default: Date.now},
-  mypageDate: {type: Date, default: Date.now},
   loginDate : Date,
   status: Object({ name: String, val: {type : String , default : '301'}}),// 201 사용중 , 301 심사대기, 401 밴, 501 삭제, 601 장기휴먼계정
   facebook: {},
@@ -130,34 +81,39 @@ UserSchema
 UserSchema
     .path('email')
     .validate(function(email) {
-        if (authTypes.indexOf(this.provider) !== -1) return true;
-        return email.length;
-    }, 'Email cannot be blank');
+        if (authTypes.indexOf(this.provider) !== -1) {
+          return Promise.resolve(true)
+        }
+        return Promise.resolve(email.length)
+    }, 'Email cannot be blank')
 
 // Validate empty password
 UserSchema
     .path('hashedPassword')
     .validate(function(hashedPassword) {
-        if (authTypes.indexOf(this.provider) !== -1) return true;
-        return hashedPassword.length;
+        if (authTypes.indexOf(this.provider) !== -1) {
+          return Promise.resolve(true)
+        }
+        return Promise.resolve(hashedPassword.length);
     }, 'Password cannot be blank');
 
 // Validate email is not taken
 UserSchema
     .path('email')
-    .validate(function(value, respond) {
-        var self = this;
-        this.constructor.findOne({email: value}, function(err, user) {
-            if(err) throw err;
-            if(user) {
-                if(self.id === user.id) return respond(true);
-                return respond(false);
-            }
-            respond(true);
+    .validate(async function (value, respond) {
+      await this.constructor.findOne({email: value})
+        .then((user) => {
+          if (user) {
+            return Promise.reject({ code: 'ERR_DUPE_ACCOUNT' })
+          } else {
+            return Promise.resolve(true)
+          }
+        }).catch((err) => {
+          return Promise.reject(err)
         });
-    }, '이미 사용중인 이메일입니다');
+    });
 
-var validatePresenceOf = function(value) {
+const validatePresenceOf = function(value) {
     return value && value.length;
 };
 
@@ -166,12 +122,8 @@ var validatePresenceOf = function(value) {
  */
 UserSchema
     .pre('save', function(next) {
-        if (this.company && this.company.homepage)
-            this.company.homepage = this.company.homepage.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-        if (!this.isNew) return next();
         if (!validatePresenceOf(this.hashedPassword) && authTypes.indexOf(this.provider) === -1)
-            next(new Error('Invalid password'));
+            next({ code: 'ERR_INVALID_SAVE' });
         else
             next();
     });
@@ -210,7 +162,7 @@ UserSchema.methods = {
      */
     encryptPassword: function(password) {
         if (!password || !this.salt) return '';
-        var salt = new Buffer(this.salt, 'base64');
+        const salt = Buffer.from(this.salt, 'base64');
         return crypto.pbkdf2Sync(password, salt, 10000, 64,'sha1').toString('base64');
     }
 };

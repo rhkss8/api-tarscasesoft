@@ -16,7 +16,7 @@ module.exports = {
   // MongoDB connection options
   mongo: {
     uri:    process.env.OPENSHIFT_MONGODB_DB_URL ||
-            'mongodb://localhost/car'
+            'mongodb+srv://tars:D29uiZHQI7RsnUuz@tarscasesoft.uinlet3.mongodb.net/pdcom?retryWrites=true&w=majority'
   },
 
   seedDB: true

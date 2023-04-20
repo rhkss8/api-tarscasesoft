@@ -1,5 +1,5 @@
 /**
- * Created by rhkss8 on 2017. 11. 13..
+ * Created by tarscase-soft on 2017. 11. 13..
  * 기본 변수 모음
  */
 module.exports = {

@@ -4,27 +4,39 @@
 
 'use strict';
 
-var express = require('express');
-var favicon = require('serve-favicon');
-var morgan = require('morgan');
-var compression = require('compression');
-var bodyParser = require('body-parser');
-var methodOverride = require('method-override');
-var cookieParser = require('cookie-parser');
-var errorHandler = require('errorhandler');
-var path = require('path');
-var config = require('./environment');
-var passport = require('passport');
-var session = require('express-session');
-var mongoStore = require('connect-mongo')(session);
-var mongoose = require('mongoose');
+const express = require('express');
+const favicon = require('serve-favicon');
+const morgan = require('morgan');
+const compression = require('compression');
+const bodyParser = require('body-parser');
+const methodOverride = require('method-override');
+const cookieParser = require('cookie-parser');
+const errorHandler = require('errorhandler');
+const path = require('path');
+const config = require('./environment');
+const passport = require('passport');
+const cors = require("cors");
+// const session = require('express-session');
+// const mongoStore = require('connect-mongo')(session);
+// const mongoose = require('mongoose');
 
-
+const whiteList = ['http://localhost:3000']
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (whiteList.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not Allowed Origin'))
+    }
+  },
+  credential: true,
+  optionsSuccessStatus: 200
+}
 
 // mongoose.Promise = global.Promise;
 
 module.exports = function(app) {
-  var env = app.get('env');
+  const env = app.get('env');
 
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'jade');
@@ -37,15 +49,17 @@ module.exports = function(app) {
   app.use(bodyParser.json({limit: '50mb'}));
   app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
 
-  app.use(session({
-    secret: config.secrets.session,
-    resave: true,
-    saveUninitialized: true,
-    store: new mongoStore({
-      mongooseConnection: mongoose.connection,
-      db: 'car'
-    })
-  }));
+  app.use(cors(corsOptions))
+
+  // app.use(session({
+  //   secret: config.secrets.session,
+  //   resave: true,
+  //   saveUninitialized: true,
+  //   store: new mongoStore({
+  //     mongooseConnection: mongoose.connection,
+  //     db: 'car'
+  //   })
+  // }));
 
   if ('production' === env) {
     app.use(favicon(path.join(config.root, 'public', 'favicon.ico')));

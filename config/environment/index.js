@@ -1,7 +1,7 @@
 'use strict';
 
-var path = require('path');
-var _ = require('lodash');
+const path = require('path');
+const _ = require('lodash');
 
 function requiredProcessEnv(name) {
   if(!process.env[name]) {
@@ -12,7 +12,7 @@ function requiredProcessEnv(name) {
 
 // All configurations will extend these options
 // ============================================
-var all = {
+const all = {
   env: process.env.NODE_ENV,
 
   // Root path of server
@@ -29,21 +29,23 @@ var all = {
 
   // Secret for session, you will want to change this and make it an environment variable
   secrets: {
-    session: 'car-secret'
-    ,views : 'post-view'
+    tokenTime: '6h',
+    session: 'tc-secret',
+    views : 'post-view'
   },
 
 
   // List of users roles
-  userRoles: ['guest', 'user', 'dealer','admin'],
+  userRoles: ['guest', 'user','admin'],
 
   // MongoDB connection options
   mongo: {
-    options: {
-      db: {
-        safe: true
-      }
-    }
+    // options: {
+    //   db: {
+    //     safe: true
+    //   }
+    // }
+    useNewUrlParser: true, useUnifiedTopology: true
   },
 
   facebook: {

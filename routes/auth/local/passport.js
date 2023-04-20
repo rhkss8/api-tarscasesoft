@@ -1,6 +1,7 @@
-var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
-var _ = require('lodash');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const _ = require('lodash');
+// const UserModel = require('../../api/users/user.model')
 
 exports.setup = function (User, config) {
   passport.use(new LocalStrategy({
@@ -10,9 +11,7 @@ exports.setup = function (User, config) {
     function(email, password, done) {
       User.findOne({
         email: email.toLowerCase()
-      }, function(err, user) {
-        if (err) return done(err);
-
+      }).then((user) => {
         if (!user) {
           return done(null, false, { message: 'ACCOUNT_NOT_CORRECT' });
         }
@@ -20,15 +19,18 @@ exports.setup = function (User, config) {
           return done(null, false, { message: 'PASSWORD_NOT_CORRECT' });
         }
 
-        _.extend(user,{
-          loginDate : Date.now()
-        });
 
-        user.save(function (err, result) {
-          if (err) return done(err);
-          return done(null, result);
-        });
-      });
+        // const query = {
+        //   loginDate : Date.now()
+        // }
+        done(null, user);
+        // User.save({ email: user.email }, query).then((result) => {
+        // }).catch((err) => {
+        //   return done(err);
+        // })
+      }).catch((err) => {
+        return done(err);
+      })
     }
   ));
 };
